@@ -4,9 +4,7 @@ import logging
 from players import Player
 from typing import List, Tuple
 
-CARDSPATH = "/home/seane/Development/dixit/data/images/cards"
-
-logger = logging.getLogger('game_logic')
+CARDSPATH = "/data/images/cards"
 
 def setup_deck() -> Tuple[List[str], List[str]]:
     # image_directory = input("Enter the directory path for image cards: ")
@@ -16,17 +14,6 @@ def setup_deck() -> Tuple[List[str], List[str]]:
     random.shuffle(deck)
     return deck, discard_pile
 
-def load_images_from_directory(directory: str) -> List[str]:
-    if not os.path.exists(directory):
-        raise FileNotFoundError(f"Directory {directory} does not exist.")
-    image_files = sorted(
-        os.path.join(directory, filename)
-        for filename in os.listdir(directory)
-        if filename.lower().endswith((".png", ".jpg", ".jpeg"))
-    )
-    if not image_files:
-        raise FileNotFoundError(f"No image files found in directory {directory}.")
-    return image_files
 
 def deal_cards(players: List['Player'], cur_deck: List[str], discard_pile: List[str], num_cards: int) -> List[str]:
     total_needed_cards = len(players) * num_cards

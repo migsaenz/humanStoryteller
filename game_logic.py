@@ -1,6 +1,6 @@
 import logging
 from typing import List
-#from modelLogic.model_manager import ModelManager
+from model_manager import ModelManager
 from players import Player, Human, Bot
 from deck import setup_deck, deal_cards
 from scoring import collect_cards_from_players, collect_votes_from_players, handle_round_end

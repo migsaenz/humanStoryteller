@@ -1,0 +1,4 @@
+Miguel 0 0 0 0
+Miguel 0 -1 1 0
+|human guesser, | |round in game, | |storyteller success (non zero = success), | |bot correct (zero = wrong)| |human correct (zero = wrong)|
+Miguel , 0 , 1 , 0 , 1

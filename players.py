@@ -1,12 +1,13 @@
 import random
 import logging
+import csv
 from abc import ABC, abstractmethod
 from typing import Tuple, Optional, List
-from modelLogic.model_manager import ModelManager
-from modelLogic.generate_image_caption import ImageCaptionGenerator
-from modelLogic.abstractor import Abstractor
-from modelLogic.text_processor import TextProcessor
-from modelLogic.similarity import ImageTextSimilarity
+from model_manager import ModelManager
+from generate_image_caption import ImageCaptionGenerator
+from abstractor import Abstractor
+from text_processor import TextProcessor
+from similarity import ImageTextSimilarity
 
 logger = logging.getLogger('game_logic')
 
@@ -67,13 +68,13 @@ class Human(Player):
     def choose_card_based_on_clue(self, clue: str) -> str:
         return self.choose_card()
 
-    def vote(self, table: List[Tuple[int, str]], clue: str) -> int:
+    def vote(self, table, clue) -> int:
         if not table:
             logger.error("No cards on the table to vote on.")
             return None
 
         print("Cards on the table:")
-        for index, (player_id, card) in enumerate(table):
+        for index, (card) in enumerate(table):
             print(f"{index + 1}: {card}")
 
         while True:
@@ -95,20 +96,32 @@ class Bot(Player):
         self._similarity_checker = ImageTextSimilarity(self._model_manager)
         self._abstractor = Abstractor()
         self._text_processor = TextProcessor()
+        self.storyteller_card = ""
 
     def storyteller_turn(self) -> Tuple[str, str]:
         card = random.choice(self.hand)
+        self.storyteller_card = card
         clue = self.generate_clue(card)
-        logger.info(f"Bot {self.name} selected card: {card} with clue: {clue}")
-        print(f"{self.name} (Storyteller) selected card: {card} with clue: '{clue}'")
+        # line for debugging, players shouldn't see the card the storyteller picks
+        # print(f"{self.name} (Storyteller) selected card: {card} with clue: '{clue}'")
+        print(f"{self.name} (Storyteller) selected card and provided the clue: '{clue}'")
         return card, clue
 
     def generate_clue(self, card: str) -> str:
-        caption = self._caption_generator.generate_caption(card)
+        caption = ""
+        with open("cache.csv", "r") as f:
+            reader = csv.reader(f)
+            for row in reader:
+                cur_card = row[0].strip()
+                description = row[1].strip()
+                if (cur_card == card):
+                    caption = description
+                    break
         obfuscated_caption = self._text_processor.obfuscate_description(caption, self._abstractor)
         return obfuscated_caption
 
-    def choose_card_based_on_clue(self, clue: str) -> Optional[str]:
+    def choose_card_based_on_clue(self, clue) -> Optional[str]:
+        selected = []
         if not self.hand:
             logger.error(f"{self.name} has no cards left to choose from based on the clue.")
             return None
@@ -121,20 +134,21 @@ class Bot(Player):
         if not similarities:
             logger.error(f"{self.name} could not find any matching cards based on the clue.")
             return None
+        
+        similarities.sort(reverse=True, key=lambda x: x[0])
+        x = 0 
+        while x < 5:
+            selected.append(similarities.pop(0))
+            x += 1
+        return selected
 
-        best_match = max(similarities, key=lambda x: x[0])
-        self.hand.remove(best_match[1])
-        logger.info(f"{self.name} chose card based on clue: {best_match[1]}")
-        return best_match[1]
-
-    def vote(self, table: List[Tuple[int, str]], clue: str) -> int:
+    def vote(self, table, clue) -> int:
         similarities = [
-            (self._similarity_checker.compare_image_and_text(card, clue), i)
-            for i, (_, card) in enumerate(table)
+            (self._similarity_checker.compare_image_and_text(card, clue), card)
+            for card in table
         ]
-        best_vote = max(similarities, key=lambda x: x[0])
-        logger.info(f"Bot {self.name} voted for card index: {best_vote[1]} based on clue: {clue}")
-        return best_vote[1]
+        similarities.sort(reverse=True, key=lambda x: x[0])
+        return similarities[0][1]
 
     def choose_card(self) -> Optional[str]:
         if not self.hand:

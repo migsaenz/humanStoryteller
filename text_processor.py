@@ -1,6 +1,6 @@
 import spacy
 from typing import Optional
-from modelLogic.abstractor import Abstractor
+from abstractor import Abstractor
 
 class TextProcessor:
     def __init__(self, nlp_model: Optional[spacy.language.Language] = None):

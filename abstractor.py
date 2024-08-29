@@ -1,4 +1,6 @@
-import openai
+from openai import OpenAI
+
+client = OpenAI(api_key="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")
 import os
 import time
 import logging
@@ -12,12 +14,11 @@ logger = logging.getLogger('text_processing')
 
 class Abstractor:
     def __init__(self, api_key: Optional[str] = None, model_name: str = DEFAULT_MODEL):
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        self.api_key = "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" or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             logger.error("API key is required for OpenAI.")
             raise ValueError("API key is required for OpenAI")
 
-        openai.api_key = self.api_key
         self.model_name = model_name
         logger.info(f"Abstractor initialized with model: {self.model_name}")
 
@@ -58,14 +59,12 @@ class Abstractor:
         for attempt in range(RETRIES):
             try:
                 logger.debug(f"Attempt {attempt + 1} to generate a clue.")
-                response = openai.ChatCompletion.create(
-                    model=self.model_name,
-                    messages=[{"role": "user", "content": prompt}],
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    top_p=top_p,
-                )
-                generated_clue = response.choices[0].message["content"].strip()
+                response = client.chat.completions.create(model=self.model_name,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=max_tokens,
+                temperature=temperature,
+                top_p=top_p)
+                generated_clue = response.choices[0].message.content.strip()
 
                 if all(
                     banned.lower() not in generated_clue.lower()
@@ -76,7 +75,8 @@ class Abstractor:
                 else:
                     logger.warning(f"Generated clue contained banned phrases: {generated_clue}")
 
-            except openai.error.RateLimitError:
+
+            except OpenAI.RateLimitError:
                 if attempt < RETRIES - 1:
                     wait_time = 2 ** attempt + random.uniform(0, 1)
                     logger.warning(
@@ -86,10 +86,11 @@ class Abstractor:
                 else:
                     logger.error("Rate limit exceeded after multiple retries.")
                     raise
-            except openai.error.OpenAIError as e:
+            except OpenAI.APIStatusError as e:
                 logger.error(f"OpenAI API error occurred: {e}")
                 if attempt == RETRIES - 1:
                     return "Abstract Clue"
+
             except Exception as e:
                 logger.error(f"An unexpected error occurred: {e}")
                 return "Abstract Clue"
