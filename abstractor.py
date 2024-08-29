@@ -1,11 +1,13 @@
 from openai import OpenAI
-
-client = OpenAI(api_key="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")
 import os
 import time
 import logging
 import random
 from typing import List, Optional
+from dotenv import load_dotenv
+
+load_dotenv()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 RETRIES = 3
 DEFAULT_MODEL = "gpt-4"
@@ -14,7 +16,7 @@ logger = logging.getLogger('text_processing')
 
 class Abstractor:
     def __init__(self, api_key: Optional[str] = None, model_name: str = DEFAULT_MODEL):
-        self.api_key = "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" or os.getenv("OPENAI_API_KEY")
+        self.api_key = os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             logger.error("API key is required for OpenAI.")
             raise ValueError("API key is required for OpenAI")
